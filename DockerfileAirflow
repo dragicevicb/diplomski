@@ -1,0 +1,22 @@
+FROM apache/airflow:2.8.0-python3.9
+USER root
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends wget ca-certificates \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /usr/lib/jvm \
+    && cd /usr/lib/jvm \
+    && wget -O openjdk-11.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.14.1%2B1/OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.14.1_1.tar.gz \
+    && tar -xzf openjdk-11.tar.gz --one-top-level=jdk-11 --strip-components=1 \
+    && rm openjdk-11.tar.gz
+
+USER airflow
+
+ENV JAVA_HOME=/usr/lib/jvm/jdk-11
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+COPY airflow/requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install apache-airflow==2.8.0 -r requirements.txt
